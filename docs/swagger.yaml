@@ -1,0 +1,296 @@
+basePath: /api/v1
+definitions:
+  domain.Order:
+    properties:
+      address:
+        maxLength: 200
+        type: string
+      createdAt:
+        type: string
+      delivery:
+        enum:
+        - pickup
+        - delivery
+        type: string
+      id:
+        type: string
+      items:
+        items:
+          $ref: '#/definitions/domain.OrderItem'
+        maxItems: 100
+        minItems: 1
+        type: array
+      name:
+        maxLength: 80
+        type: string
+      phone:
+        maxLength: 20
+        minLength: 10
+        type: string
+      status:
+        type: string
+      total:
+        type: integer
+    required:
+    - items
+    - name
+    - phone
+    type: object
+  domain.OrderInput:
+    properties:
+      address:
+        maxLength: 200
+        type: string
+      delivery:
+        enum:
+        - pickup
+        - delivery
+        type: string
+      items:
+        items:
+          $ref: '#/definitions/domain.OrderItem'
+        maxItems: 100
+        minItems: 1
+        type: array
+      name:
+        maxLength: 80
+        type: string
+      phone:
+        maxLength: 20
+        minLength: 10
+        type: string
+    required:
+    - items
+    - name
+    - phone
+    type: object
+  domain.OrderItem:
+    properties:
+      id:
+        type: string
+      name:
+        type: string
+      price:
+        type: integer
+      qty:
+        maximum: 100
+        minimum: 1
+        type: integer
+    required:
+    - id
+    type: object
+  domain.Product:
+    properties:
+      badge:
+        maxLength: 40
+        type: string
+      category:
+        enum:
+        - Смартфоны
+        - Ноутбуки
+        - Аудио
+        - Часы
+        type: string
+      color:
+        type: string
+      id:
+        type: string
+      name:
+        maxLength: 100
+        type: string
+      old:
+        maximum: 10000000
+        minimum: 0
+        type: integer
+      price:
+        maximum: 10000000
+        type: integer
+      spec:
+        maxLength: 300
+        type: string
+      stock:
+        maximum: 100000
+        minimum: 0
+        type: integer
+      type:
+        enum:
+        - phone
+        - laptop
+        - headphones
+        - watch
+        type: string
+    required:
+    - color
+    - name
+    - spec
+    type: object
+  types.Error:
+    properties:
+      error:
+        type: string
+    type: object
+  types.Status:
+    properties:
+      status:
+        enum:
+        - Новый
+        - Подтверждён
+        - Собирается
+        - Готов к выдаче
+        - Завершён
+        type: string
+    type: object
+info:
+  contact: {}
+  description: Electronics catalog and orders API
+  title: Kontakt API
+  version: "1.0"
+paths:
+  /orders:
+    get:
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/domain.Order'
+            type: array
+      security:
+      - AdminToken: []
+      summary: Latest 500 orders (admin)
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: Order
+        in: body
+        name: order
+        required: true
+        schema:
+          $ref: '#/definitions/domain.OrderInput'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/domain.Order'
+        "409":
+          description: Conflict
+          schema:
+            $ref: '#/definitions/types.Error'
+      summary: Create order; prices are calculated by server
+      tags:
+      - orders
+  /orders/{id}/status:
+    patch:
+      consumes:
+      - application/json
+      parameters:
+      - description: Order UUID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Status
+        in: body
+        name: status
+        required: true
+        schema:
+          $ref: '#/definitions/types.Status'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/types.Status'
+      security:
+      - AdminToken: []
+      summary: Update order status (admin)
+  /products:
+    get:
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/domain.Product'
+            type: array
+      summary: List catalog products
+      tags:
+      - catalog
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: Product
+        in: body
+        name: product
+        required: true
+        schema:
+          $ref: '#/definitions/domain.Product'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/domain.Product'
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/domain.Product'
+      security:
+      - AdminToken: []
+      summary: Create or replace product (admin)
+  /products/{id}:
+    get:
+      parameters:
+      - description: Product UUID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/domain.Product'
+      summary: Get product
+    put:
+      consumes:
+      - application/json
+      parameters:
+      - description: Product
+        in: body
+        name: product
+        required: true
+        schema:
+          $ref: '#/definitions/domain.Product'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/domain.Product'
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/domain.Product'
+      security:
+      - AdminToken: []
+      summary: Create or replace product (admin)
+securityDefinitions:
+  AdminToken:
+    in: header
+    name: Authorization
+    type: apiKey
+swagger: "2.0"
